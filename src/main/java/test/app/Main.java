@@ -3,7 +3,6 @@ package test.app;
 import java.util.Arrays;
 import java.util.List;
 
-import dao.exceptions.DataAccessException;
 import database.DatabaseConnection;
 import metadata.extractor.MetadataExtractor;
 import metadata.extractor.PostgresTypeMapping;
@@ -13,9 +12,9 @@ import metadata.extractor.relationships.OneToManyHandler;
 import metadata.extractor.relationships.OneToOneHandler;
 import metadata.extractor.relationships.interfaces.RelationshipHandler;
 import schema.SchemaGenerator;
-import test.dao.RoleDAO;
-import test.dao.UserDAO;
+import test.model.Address;
 import test.model.Order;
+import test.model.Product;
 import test.model.Role;
 import test.model.User;
 
@@ -38,9 +37,12 @@ public class Main {
             MetadataExtractor extractor = new MetadataExtractor(new PostgresTypeMapping(), handlers);
             SchemaGenerator schemaGenerator = new SchemaGenerator(extractor);
 
-            schemaGenerator.createTableIfNotExists(Role.class); // cria roles primeiro
-            schemaGenerator.createTableIfNotExists(User.class); // cria users e a join table users_roles
-            schemaGenerator.createTableIfNotExists(Order.class); // cria orders por último
+            schemaGenerator.createTableIfNotExists(Role.class);
+            schemaGenerator.createTableIfNotExists(User.class);
+            schemaGenerator.createTableIfNotExists(Address.class);
+            schemaGenerator.createTableIfNotExists(Order.class);
+            schemaGenerator.createTableIfNotExists(Product.class);
+
               
           
         } catch (Exception e) {

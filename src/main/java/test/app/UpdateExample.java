@@ -14,7 +14,7 @@ public class UpdateExample {
             User u = userDAO.findById(1); 
             if (u != null) {
                 System.out.println("Usuário antes do update: " + u.getName());
-                u.setName("Alice Updated");
+                u.setName("Alice Atualizada");
                 userDAO.update(u);
             } else {
                 System.out.println("Usuário não encontrado para update.");

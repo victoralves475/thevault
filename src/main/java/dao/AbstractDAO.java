@@ -15,6 +15,8 @@ import dao.exceptions.DataAccessException;
 import dao.query.DefaultQueryBuilder;
 import dao.query.QueryBuilder;
 import database.DatabaseConnection;
+import validation.Validator;
+import validation.exceptions.ValidationException;
 
 public abstract class AbstractDAO<T, ID> implements DAO<T, ID> {
 
@@ -32,6 +34,13 @@ public abstract class AbstractDAO<T, ID> implements DAO<T, ID> {
 
     @Override
     public void insert(T entity) throws DataAccessException {
+        // Validar campos antes da inserção
+        try {
+            Validator.validateNotBlankFields(entity);
+        } catch (ValidationException | javax.xml.bind.ValidationException ve) {
+            throw new DataAccessException("Validação falhou: " + ve.getMessage(), ve);
+        }
+
         String sql = queryBuilder.buildInsertQuery();
 
         try (Connection conn = databaseConnection.getConnection();
@@ -89,6 +98,13 @@ public abstract class AbstractDAO<T, ID> implements DAO<T, ID> {
 
     @Override
     public void update(T entity) throws DataAccessException {
+        // Validar campos antes do update também
+        try {
+            Validator.validateNotBlankFields(entity);
+        } catch (ValidationException | javax.xml.bind.ValidationException ve) {
+            throw new DataAccessException("Validação falhou: " + ve.getMessage(), ve);
+        }
+
         String sql = queryBuilder.buildUpdateQuery();
         try (Connection conn = databaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -139,15 +155,7 @@ public abstract class AbstractDAO<T, ID> implements DAO<T, ID> {
         }
     }
 
-    /**
-     * Agora `getColumnCount` não está mais sendo usado internamente no build das queries,
-     * mas ainda pode ser usado em setStatementParameters.
-     * Podemos obter o count do QueryBuilder caso precise, ou manter essa lógica aqui:
-     */
     protected int getColumnCount() {
-        // Podemos reutilizar o QueryBuilder, pois ele já filtra colunas
-        // Se necessário, expor um método no QueryBuilder ou replicar a lógica do DefaultQueryBuilder
-        // Aqui, por simplicidade, replicaremos a lógica:
         return (int) Arrays.stream(entityClass.getDeclaredFields())
                 .filter(f -> !f.isAnnotationPresent(Id.class) && f.isAnnotationPresent(Column.class))
                 .count();

@@ -9,8 +9,8 @@ import java.util.List;
 
 import dao.AbstractDAO;
 import dao.exceptions.DataAccessException;
-import database.DatabaseConnection;
 import test.model.Order;
+import test.model.User;
 
 public class OrderDAO extends AbstractDAO<Order, Integer> {
 
@@ -22,33 +22,28 @@ public class OrderDAO extends AbstractDAO<Order, Integer> {
     protected Order mapResultSetToEntity(ResultSet rs) throws SQLException {
         Order o = new Order();
         o.setId(rs.getInt("id"));
-        int userId = rs.getInt("user_id");
-        java.sql.Date orderDate = rs.getDate("order_date");
-        o.setOrderDate(new java.util.Date(orderDate.getTime()));
+        java.sql.Date date = rs.getDate("order_date");
+        o.setOrderDate(new java.util.Date(date.getTime()));
 
-        // Buscar o usuário associado
-        // Supondo que você tenha o UserDAO
+        int userId = rs.getInt("user_id");
         UserDAO userDAO = new UserDAO();
-        o.setUser(userDAO.findById(userId));
+        User u = userDAO.findById(userId);
+        o.setUser(u);
 
         return o;
     }
 
     @Override
     protected void setStatementParameters(PreparedStatement stmt, Order entity) throws SQLException {
-        // Assumindo que a ordem dos campos sem @Id é user_id, order_date
-        // conforme definido na classe Order
+        // Campos sem @Id: user_id, order_date
         stmt.setInt(1, entity.getUser().getId());
         stmt.setDate(2, new java.sql.Date(entity.getOrderDate().getTime()));
     }
 
-    /**
-     * Método para buscar orders por user_id
-     */
     public List<Order> findByUserId(int userId) throws DataAccessException {
         String sql = "SELECT * FROM orders WHERE user_id = ?";
         List<Order> orders = new ArrayList<>();
-        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+        try (Connection conn = database.DatabaseConnection.getInstance().getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, userId);
             try (ResultSet rs = stmt.executeQuery()) {

@@ -27,7 +27,7 @@ public class OneToManyHandler implements RelationshipHandler{
 			for (Field f : target.getDeclaredFields()) {
 				ManyToOne mto = f.getAnnotation(ManyToOne.class);
 				//Verificar o tm.getClass (gpt sugeriu o tm.getEntityClass)
-				if (mto != null && mto.targetEntity().equals(tm.getClass())) {
+				if (mto != null && mto.targetEntity().equals(tm.getEntityClass())) {
 					if (f.getName().equals(mappedBy)) {
 						found = true;
 						break;
