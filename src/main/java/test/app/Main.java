@@ -15,6 +15,7 @@ import metadata.extractor.relationships.interfaces.RelationshipHandler;
 import schema.SchemaGenerator;
 import test.dao.RoleDAO;
 import test.dao.UserDAO;
+import test.model.Order;
 import test.model.Role;
 import test.model.User;
 
@@ -37,45 +38,16 @@ public class Main {
             MetadataExtractor extractor = new MetadataExtractor(new PostgresTypeMapping(), handlers);
             SchemaGenerator schemaGenerator = new SchemaGenerator(extractor);
 
-            schemaGenerator.createTableIfNotExists(Role.class);
-            schemaGenerator.createTableIfNotExists(User.class);            
-            // A join table (users_roles) será criada automaticamente quando processar User ou Role
-            // dependendo da sua implementação.
-
-            // Testar inserção
-            UserDAO userDAO = new UserDAO();
-            RoleDAO roleDAO = new RoleDAO();
-
-            Role roleAdmin = new Role();
-            roleAdmin.setRoleName("ADMIN");
-            roleDAO.insert(roleAdmin); // inserir role
-            System.out.println(roleAdmin.getId());
-
-            Role roleUser = new Role();
-            roleUser.setRoleName("USER");
-            roleDAO.insert(roleUser); // inserir role
-            System.out.println(roleUser.getId());
-            
-
-            User u = new User();
-            u.setName("Alice"); // NotBlank, não pode ser vazio
-            userDAO.insert(u);
-            System.out.println("Usuário inserido: ID=" + u.getId() + ", name=" + u.getName());
-
-            // Adicionar roles ao usuário
-            userDAO.addRoles(u, Arrays.asList(roleAdmin.getId(), roleUser.getId()));
-            System.out.println("Roles adicionadas ao usuário " + u.getName());
-
-            // Buscar roles do usuário
-            List<Integer> userRoles = userDAO.getUserRolesIds(u.getId());
-            System.out.println("Roles do usuário " + u.getName() + ": " + userRoles);
-
-        } catch (DataAccessException e) {
-            e.printStackTrace();
-            System.out.println("Erro de acesso a dados: " + e.getMessage());
+            schemaGenerator.createTableIfNotExists(Role.class); // cria roles primeiro
+            schemaGenerator.createTableIfNotExists(User.class); // cria users e a join table users_roles
+            schemaGenerator.createTableIfNotExists(Order.class); // cria orders por último
+              
+          
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println("Erro inesperado: " + e.getMessage());
+            System.out.println("Erro na criação das tabelas: " + e.getMessage());
         }
+        
+        System.out.println("Tabelas criadas com sucesso");
     }
 }

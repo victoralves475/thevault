@@ -1,13 +1,16 @@
 package test.dao;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Date;
+import java.util.ArrayList;
+import java.util.List;
 
 import dao.AbstractDAO;
+import dao.exceptions.DataAccessException;
+import database.DatabaseConnection;
 import test.model.Order;
-import test.model.User;
 
 public class OrderDAO extends AbstractDAO<Order, Integer> {
 
@@ -20,33 +23,42 @@ public class OrderDAO extends AbstractDAO<Order, Integer> {
         Order o = new Order();
         o.setId(rs.getInt("id"));
         int userId = rs.getInt("user_id");
-        Date orderDate = rs.getDate("order_date");
-        o.setOrderDate(orderDate);
+        java.sql.Date orderDate = rs.getDate("order_date");
+        o.setOrderDate(new java.util.Date(orderDate.getTime()));
 
-        // Buscar o usuário referenciado
+        // Buscar o usuário associado
+        // Supondo que você tenha o UserDAO
         UserDAO userDAO = new UserDAO();
-        try {
-            User u = userDAO.findById(userId);
-            o.setUser(u);
-        } catch (Exception e) {
-            throw new SQLException("Erro ao buscar usuário relacionado", e);
-        }
+        o.setUser(userDAO.findById(userId));
 
         return o;
     }
 
     @Override
     protected void setStatementParameters(PreparedStatement stmt, Order entity) throws SQLException {
-        // Os campos sem @Id são user_id e order_date na ordem que aparecem na classe
-        // O foreignKeyName="user_id" define a coluna user_id no banco
-        // A ordem dada pelo getColumnNames() no AbstractDAO segue a ordem dos fields na classe (exceto o @Id)
-        // Fields: user, orderDate
-        // user -> user_id
-        // orderDate -> order_date
-
-        // 1º parametro: user_id
+        // Assumindo que a ordem dos campos sem @Id é user_id, order_date
+        // conforme definido na classe Order
         stmt.setInt(1, entity.getUser().getId());
-        // 2º parametro: order_date
         stmt.setDate(2, new java.sql.Date(entity.getOrderDate().getTime()));
+    }
+
+    /**
+     * Método para buscar orders por user_id
+     */
+    public List<Order> findByUserId(int userId) throws DataAccessException {
+        String sql = "SELECT * FROM orders WHERE user_id = ?";
+        List<Order> orders = new ArrayList<>();
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, userId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    orders.add(mapResultSetToEntity(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Erro ao buscar orders por user_id", e);
+        }
+        return orders;
     }
 }
