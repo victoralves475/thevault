@@ -1,8 +1,9 @@
 package metadata.extractor;
 
 import java.lang.reflect.Field;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import annotations.Column;
 import annotations.Entity;
@@ -13,96 +14,84 @@ import metadata.extractor.relationships.interfaces.RelationshipHandler;
 
 public class MetadataExtractor {
 
-	private final TypeMappingStrategy typeMapping;
-	private final List<RelationshipHandler> relationshipHandlers;
+    private final TypeMappingStrategy typeMapping;
+    private final List<RelationshipHandler> relationshipHandlers;
 
-	public MetadataExtractor(TypeMappingStrategy typeMapping, List<RelationshipHandler> relationshipHandlers) {
-		this.typeMapping = typeMapping;
-		this.relationshipHandlers = relationshipHandlers;
-	}
+    // Cache para evitar re-extrair metadados de entidades já processadas
+    private Map<Class<?>, TableMetadata> metadataCache = new HashMap<>();
 
-	public TableMetadata extractMetadata(Class<?> entityClass) {
-		if (!entityClass.isAnnotationPresent(Entity.class)) {
-			throw new IllegalArgumentException("Classe " + entityClass.getName() + "não está anotada como '@Entity'");
-		}
+    public MetadataExtractor(TypeMappingStrategy typeMapping, List<RelationshipHandler> relationshipHandlers) {
+        this.typeMapping = typeMapping;
+        this.relationshipHandlers = relationshipHandlers;
+    }
 
-		Entity entityAnn = entityClass.getAnnotation(Entity.class);
-		TableMetadata tm = new TableMetadata();
-		tm.setTableName(entityAnn.tableName());
+    public TableMetadata extractMetadata(Class<?> entityClass) {
+        // Se já temos metadados no cache, retorna imediatamente
+        if (metadataCache.containsKey(entityClass)) {
+            return metadataCache.get(entityClass);
+        }
 
-		for (Field field : entityClass.getDeclaredFields()) {
-			field.setAccessible(true);
-			boolean handled = false;
-			for (RelationshipHandler handler : relationshipHandlers) {
-				if (handler.handleRelationship(field, tm, this)) {
-					handled = true;
-					break;
-				}
-			}
-			if (!handled) {
-				ColumnMetadata cm = createColumnMetadata(field);
-				if (cm != null) {
-					tm.addColumn(cm);
-					if (cm.isPrimaryKey()) {
-						tm.setPrimaryKey(cm);
-					}
-				}
-			}
-		}
+        if (!entityClass.isAnnotationPresent(Entity.class)) {
+            throw new IllegalArgumentException("Classe " + entityClass.getName() + " não está anotada como '@Entity'");
+        }
 
-		/*
-		 * Arrays.stream(entityClass.getDeclaredFields()).forEach(field -> {
-		 * ColumnMetadata cm = createColumnMetadata(field); if (cm != null) {
-		 * tm.addColumn(cm); if (cm.isPrimaryKey()) { tm.setPrimaryKey(cm); } } });
-		 */
+        Entity entityAnn = entityClass.getAnnotation(Entity.class);
+        TableMetadata tm = new TableMetadata();
+        tm.setEntityClass(entityClass); // Opcional, caso queira guardar a classe da entidade
+        tm.setTableName(entityAnn.tableName());
 
-		return tm;
-	}
+        // Armazenar no cache antes de processar campos, prevenindo loops
+        metadataCache.put(entityClass, tm);
 
-	private ColumnMetadata createColumnMetadata(Field field) {
-		boolean isId = field.isAnnotationPresent(Id.class);
-		Column col = field.getAnnotation(Column.class);
+        for (Field field : entityClass.getDeclaredFields()) {
+            field.setAccessible(true);
+            boolean handled = false;
+            for (RelationshipHandler handler : relationshipHandlers) {
+                if (handler.handleRelationship(field, tm, this)) {
+                    handled = true;
+                    break;
+                }
+            }
+            if (!handled) {
+                ColumnMetadata cm = createColumnMetadata(field);
+                if (cm != null) {
+                    tm.addColumn(cm);
+                    if (cm.isPrimaryKey()) {
+                        tm.setPrimaryKey(cm);
+                    }
+                }
+            }
+        }
 
-		if (!isId && col == null) {
-			// Não é coluna nem PK, nem relacionamento - ignorar
-			return null;
-		}
+        return tm;
+    }
 
-		String columnName = field.getName();
-		if (col != null && !col.name().isEmpty()) {
-			columnName = col.name();
-		}
+    private ColumnMetadata createColumnMetadata(Field field) {
+        boolean isId = field.isAnnotationPresent(Id.class);
+        Column col = field.getAnnotation(Column.class);
 
-		String sqlType;
-		if (col != null && !col.type().isEmpty()) {
-			sqlType = col.type();
-		} else {
-			sqlType = typeMapping.mapJavaTypeToSQL(field.getType());
-		}
+        if (!isId && col == null) {
+            // Não é coluna, não é PK e não é relacionamento - ignorar
+            return null;
+        }
 
-		ColumnMetadata cm = new ColumnMetadata();
-		cm.setName(columnName);
-		cm.setSqlType(sqlType);
-		cm.setPrimaryKey(isId);
-		cm.setNullable(col == null || col.nullable());
-		return cm;
-	}
-	/*
-	 * field.setAccessible(true); String columnName = field.getName(); boolean
-	 * primaryKey = field.isAnnotationPresent(Id.class);
-	 * 
-	 * Column col = field.getAnnotation(Column.class); if (col != null &&
-	 * !col.name().isEmpty()) { columnName = col.name(); }
-	 * 
-	 * String sqlType; if (col != null && !col.type().isEmpty()) { sqlType =
-	 * col.type(); } else { sqlType = typeMapping.mapJavaTypeToSQL(field.getType());
-	 * }
-	 * 
-	 * ColumnMetadata cm = new ColumnMetadata(); cm.setName(columnName);
-	 * cm.setSqlType(sqlType); cm.setPrimaryKey(primaryKey); cm.setNullable(col ==
-	 * null || col.nullable());
-	 * 
-	 * return cm; }
-	 */
+        String columnName = field.getName();
+        if (col != null && !col.name().isEmpty()) {
+            columnName = col.name();
+        }
 
+        String sqlType;
+        if (col != null && !col.type().isEmpty()) {
+            sqlType = col.type();
+        } else {
+            sqlType = typeMapping.mapJavaTypeToSQL(field.getType());
+        }
+
+        ColumnMetadata cm = new ColumnMetadata();
+        cm.setName(columnName);
+        cm.setSqlType(sqlType);
+        cm.setPrimaryKey(isId);
+        cm.setNullable(col == null || col.nullable());
+        return cm;
+    }
 }

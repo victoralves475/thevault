@@ -1,63 +1,74 @@
 package test.app;
 
 import java.util.Arrays;
-import java.util.Date;
+import java.util.List;
 
 import dao.exceptions.DataAccessException;
 import database.DatabaseConnection;
 import metadata.extractor.MetadataExtractor;
 import metadata.extractor.PostgresTypeMapping;
+import metadata.extractor.relationships.ManyToManyHandler;
 import metadata.extractor.relationships.ManyToOneHandler;
+import metadata.extractor.relationships.OneToManyHandler;
+import metadata.extractor.relationships.OneToOneHandler;
 import metadata.extractor.relationships.interfaces.RelationshipHandler;
 import schema.SchemaGenerator;
-import test.dao.OrderDAO;
+import test.dao.RoleDAO;
 import test.dao.UserDAO;
-import test.model.Order;
+import test.model.Role;
 import test.model.User;
 
 public class Main {
 
     public static void main(String[] args) {
         try {
-            // Inicializar conexão com o banco
+            // Configurar conexão
             DatabaseConnection.getInstance();
 
-            // Handlers de relacionamento
-            RelationshipHandler manyToOneHandler = new ManyToOneHandler();
-            MetadataExtractor extractor = new MetadataExtractor(new PostgresTypeMapping(), Arrays.asList(manyToOneHandler));
+            // Lista de handlers de relacionamento
+            List<RelationshipHandler> handlers = Arrays.asList(
+                new ManyToOneHandler(),
+                new OneToOneHandler(),
+                new OneToManyHandler(),
+                new ManyToManyHandler()
+            );
 
-            // Criar tabelas caso não existam
+            // Criar extractor e schema
+            MetadataExtractor extractor = new MetadataExtractor(new PostgresTypeMapping(), handlers);
             SchemaGenerator schemaGenerator = new SchemaGenerator(extractor);
-            schemaGenerator.createTableIfNotExists(User.class);
-            schemaGenerator.createTableIfNotExists(Order.class);
 
-            // Criar DAOs
+            schemaGenerator.createTableIfNotExists(Role.class);
+            schemaGenerator.createTableIfNotExists(User.class);            
+            // A join table (users_roles) será criada automaticamente quando processar User ou Role
+            // dependendo da sua implementação.
+
+            // Testar inserção
             UserDAO userDAO = new UserDAO();
-            OrderDAO orderDAO = new OrderDAO();
+            RoleDAO roleDAO = new RoleDAO();
 
-            // Inserir um usuário
+            Role roleAdmin = new Role();
+            roleAdmin.setRoleName("ADMIN");
+            roleDAO.insert(roleAdmin); // inserir role
+            System.out.println(roleAdmin.getId());
+
+            Role roleUser = new Role();
+            roleUser.setRoleName("USER");
+            roleDAO.insert(roleUser); // inserir role
+            System.out.println(roleUser.getId());
+            
+
             User u = new User();
-            u.setName("Alice");
+            u.setName("Alice"); // NotBlank, não pode ser vazio
             userDAO.insert(u);
             System.out.println("Usuário inserido: ID=" + u.getId() + ", name=" + u.getName());
 
-            // Inserir um pedido para esse usuário
-            Order o = new Order();
-            o.setUser(u);
-            o.setOrderDate(new Date());
-            orderDAO.insert(o);
-            System.out.println("Pedido inserido: ID=" + o.getId() + ", user_id=" + u.getId());
+            // Adicionar roles ao usuário
+            userDAO.addRoles(u, Arrays.asList(roleAdmin.getId(), roleUser.getId()));
+            System.out.println("Roles adicionadas ao usuário " + u.getName());
 
-            // Buscar o usuário
-            User uFound = userDAO.findById(u.getId());
-            System.out.println("Usuário encontrado: ID=" + uFound.getId() + ", name=" + uFound.getName());
-
-            // Buscar o pedido
-            Order oFound = orderDAO.findById(o.getId());
-            System.out.println("Pedido encontrado: ID=" + oFound.getId() +
-                    ", user_id=" + oFound.getUser().getId() +
-                    ", user_name=" + oFound.getUser().getName() +
-                    ", order_date=" + oFound.getOrderDate());
+            // Buscar roles do usuário
+            List<Integer> userRoles = userDAO.getUserRolesIds(u.getId());
+            System.out.println("Roles do usuário " + u.getName() + ": " + userRoles);
 
         } catch (DataAccessException e) {
             e.printStackTrace();

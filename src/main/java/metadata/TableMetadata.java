@@ -5,50 +5,61 @@ import java.util.List;
 
 public class TableMetadata {
 
-	private String tableName;
-	private ColumnMetadata primaryKey;
-	private List<ColumnMetadata> columns = new ArrayList<>();
-	private List<ForeignKeyMetadata> foreignKeys = new ArrayList<>();
-	private List<JoinTableMetadata> joinTables = new ArrayList<>();
+    private String tableName;
+    private ColumnMetadata primaryKey;
+    private List<ColumnMetadata> columns = new ArrayList<>();
+    private List<ForeignKeyMetadata> foreignKeys = new ArrayList<>();
+    private List<JoinTableMetadata> joinTables = new ArrayList<>();
 
-	public String getTableName() {
-		return this.tableName;
-	}
+    // Novo campo para armazenar a classe da entidade
+    private Class<?> entityClass;
 
-	public void setTableName(String tableName) {
-		this.tableName = tableName;
-	}
+    public String getTableName() {
+        return this.tableName;
+    }
 
-	public ColumnMetadata getPrimaryKey() {
-		return this.primaryKey;
-	}
+    public void setTableName(String tableName) {
+        this.tableName = tableName;
+    }
 
-	public void setPrimaryKey(ColumnMetadata primaryKey) {
-		this.primaryKey = primaryKey;
-	}
+    public ColumnMetadata getPrimaryKey() {
+        return this.primaryKey;
+    }
 
-	public List<ColumnMetadata> getColumns() {
-		return this.columns;
-	}
+    public void setPrimaryKey(ColumnMetadata primaryKey) {
+        this.primaryKey = primaryKey;
+    }
 
-	public void addColumn(ColumnMetadata column) {
-		this.columns.add(column);
-	}
+    public List<ColumnMetadata> getColumns() {
+        return this.columns;
+    }
 
-	public List<ForeignKeyMetadata> getForeignKeys() {
-		return this.foreignKeys;
-	}
+    public void addColumn(ColumnMetadata column) {
+        this.columns.add(column);
+    }
 
-	public void addForeignKey(ForeignKeyMetadata fk) {
-		foreignKeys.add(fk);
-	}
-	
-	public List<JoinTableMetadata> getJoinTables() {
-		return joinTables;
-	}
-	
-	public void addJoinTable(JoinTableMetadata jt) {
-		joinTables.add(jt);
-	}
+    public List<ForeignKeyMetadata> getForeignKeys() {
+        return this.foreignKeys;
+    }
 
+    public void addForeignKey(ForeignKeyMetadata fk) {
+        foreignKeys.add(fk);
+    }
+    
+    public List<JoinTableMetadata> getJoinTables() {
+        return joinTables;
+    }
+    
+    public void addJoinTable(JoinTableMetadata jt) {
+        joinTables.add(jt);
+    }
+
+    // Getter e Setter para entityClass
+    public Class<?> getEntityClass() {
+        return entityClass;
+    }
+
+    public void setEntityClass(Class<?> entityClass) {
+        this.entityClass = entityClass;
+    }
 }

@@ -1,17 +1,12 @@
 package annotations.relationships;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface ManyToMany {
-
-	Class<?> targetEntity();
-	String joinTable();
-	String joinColumn();
-	String inverseJoinColumn();
-	
+    Class<?> targetEntity();
+    String joinTable();        // nome da tabela de junção
+    String joinColumn();       // nome da FK que referencia a entidade atual
+    String inverseJoinColumn(); // nome da FK que referencia a entidade alvo
 }
