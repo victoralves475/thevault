@@ -8,4 +8,7 @@ public interface QueryBuilder {
     String buildDeleteQuery();
     String buildFindByIdQuery();
     String buildFindAllQuery();
+    
+    String buildFindWithWhere(String whereClause);
+    
 }

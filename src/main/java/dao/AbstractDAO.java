@@ -38,7 +38,7 @@ public abstract class AbstractDAO<T, ID> implements DAO<T, ID> {
         // Validar campos antes da inserção
         try {
             Validator.validateNotBlankFields(entity);  // Valida se os campos não estão em branco
-        } catch (ValidationException | javax.xml.bind.ValidationException ve) {
+        } catch (ValidationException ve) {
             // Caso ocorra erro na validação, lança uma exceção
             throw new DataAccessException("Validação falhou: " + ve.getMessage(), ve);
         }
@@ -104,7 +104,7 @@ public abstract class AbstractDAO<T, ID> implements DAO<T, ID> {
         // Validar campos antes do update também
         try {
             Validator.validateNotBlankFields(entity);  // Valida se os campos não estão em branco
-        } catch (ValidationException | javax.xml.bind.ValidationException ve) {
+        } catch (ValidationException ve) {
             // Caso ocorra erro na validação, lança uma exceção
             throw new DataAccessException("Validação falhou: " + ve.getMessage(), ve);
         }

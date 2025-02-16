@@ -9,6 +9,7 @@ import java.util.List;
 import dao.AbstractDAO;
 import dao.exceptions.DataAccessException;
 import database.DatabaseConnection;
+import test.model.Product;
 import test.model.User;
 
 public class UserDAO extends AbstractDAO<User, Integer> {
@@ -91,4 +92,7 @@ public class UserDAO extends AbstractDAO<User, Integer> {
         
         return roleIds;  // Retorna a lista de IDs das roles
     }
+     
+    
+    
 }

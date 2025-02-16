@@ -15,6 +15,12 @@ public class DefaultQueryBuilder implements QueryBuilder {
         this.entityClass = entityClass;
         this.tableName = tableName;
     }
+    
+    @Override
+    public String buildFindWithWhere(String whereClause) {
+        // Ex: "SELECT * FROM tableName WHERE " + whereClause
+        return "SELECT * FROM " + tableName + " WHERE " + whereClause;
+    }
 
     @Override
     public String buildInsertQuery() {
